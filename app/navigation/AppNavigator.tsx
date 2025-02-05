@@ -9,6 +9,8 @@ import { LessonScreen } from '../screens/LessonScreen';
 import { ScheduleScreen } from '../screens/ScheduleScreen';
 import { ContentLibraryScreen } from '../screens/ContentLibraryScreen';
 import { DocumentsLibraryScreen } from '../screens/DocumentsLibraryScreen';
+import { YouTubeLibraryScreen } from '../screens/YouTubeLibraryScreen';
+import { TweetsLibraryScreen } from '../screens/TweetsLibraryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -68,6 +70,14 @@ function TabNavigator() {
           tabBarIcon: ({ color }) => <MaterialIcons name="video-library" size={24} color={color} />,
         }}
       />
+      <Tab.Screen
+        name="Tweets"
+        component={TweetsLibraryScreen}
+        options={{
+          title: 'ציוצים',
+          tabBarIcon: ({ color }) => <MaterialIcons name="chat" size={24} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -80,6 +90,8 @@ export type RootStackParamList = {
   Schedule: undefined;
   ContentLibrary: undefined;
   Documents: undefined;
+  YouTube: undefined;
+  Tweets: undefined;
   Lesson: {
     courseId: string;
     chapterId: string;
