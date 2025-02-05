@@ -16,6 +16,7 @@ import { QuestionDetailScreen } from '../screens/QuestionDetailScreen';
 import { AddQuestionScreen } from '../screens/AddQuestionScreen';
 import { Question } from '../types/qa';
 import { JournalScreen } from '../screens/JournalScreen';
+import { ChatbotScreen } from '../screens/ChatbotScreen';
 import { JournalEntryScreen } from '../screens/JournalEntryScreen';
 import { JournalEntry } from '../types/journal';
 
@@ -101,6 +102,14 @@ function TabNavigator() {
           tabBarIcon: ({ color }) => <MaterialIcons name="book" size={24} color={color} />,
         }}
       />
+      <Tab.Screen
+        name="Chatbot"
+        component={ChatbotScreen}
+        options={{
+          title: 'עוזר למידה',
+          tabBarIcon: ({ color }) => <MaterialIcons name="chat" size={24} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -124,6 +133,7 @@ export type RootStackParamList = {
   JournalEntry: {
     entry?: JournalEntry;
   };
+  Chatbot: undefined;
   Lesson: {
     courseId: string;
     chapterId: string;
