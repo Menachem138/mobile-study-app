@@ -7,7 +7,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
-import { Course, Chapter, calculateCourseProgress, calculateChapterProgress } from '../types/course';
+import { Course, Chapter, Lesson, calculateCourseProgress, calculateChapterProgress } from '../types/course';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface CourseListProps {
