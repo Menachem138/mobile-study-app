@@ -15,6 +15,9 @@ import { QAScreen } from '../screens/QAScreen';
 import { QuestionDetailScreen } from '../screens/QuestionDetailScreen';
 import { AddQuestionScreen } from '../screens/AddQuestionScreen';
 import { Question } from '../types/qa';
+import { JournalScreen } from '../screens/JournalScreen';
+import { JournalEntryScreen } from '../screens/JournalEntryScreen';
+import { JournalEntry } from '../types/journal';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -90,6 +93,14 @@ function TabNavigator() {
           tabBarIcon: ({ color }) => <MaterialIcons name="question-answer" size={24} color={color} />,
         }}
       />
+      <Tab.Screen
+        name="Journal"
+        component={JournalScreen}
+        options={{
+          title: 'יומן למידה',
+          tabBarIcon: ({ color }) => <MaterialIcons name="book" size={24} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -109,6 +120,10 @@ export type RootStackParamList = {
     question: Question;
   };
   AddQuestion: undefined;
+  Journal: undefined;
+  JournalEntry: {
+    entry?: JournalEntry;
+  };
   Lesson: {
     courseId: string;
     chapterId: string;
@@ -145,6 +160,14 @@ export function AppNavigator() {
         component={AddQuestionScreen}
         options={{
           title: 'שאלה חדשה',
+          headerBackTitle: 'חזרה',
+        }}
+      />
+      <Stack.Screen
+        name="JournalEntry"
+        component={JournalEntryScreen}
+        options={{
+          title: 'רשומה ביומן',
           headerBackTitle: 'חזרה',
         }}
       />
