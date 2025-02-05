@@ -60,6 +60,14 @@ function TabNavigator() {
           tabBarIcon: ({ color }) => <MaterialIcons name="description" size={24} color={color} />,
         }}
       />
+      <Tab.Screen
+        name="YouTube"
+        component={YouTubeLibraryScreen}
+        options={{
+          title: 'סרטוני יוטיוב',
+          tabBarIcon: ({ color }) => <MaterialIcons name="video-library" size={24} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
