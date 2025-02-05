@@ -1,12 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { MaterialIcons } from '@expo/vector-icons';
 import { HomeScreen } from '../screens/HomeScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { CoursesScreen } from '../screens/CoursesScreen';
 import { LessonScreen } from '../screens/LessonScreen';
 import { ScheduleScreen } from '../screens/ScheduleScreen';
 import { ContentLibraryScreen } from '../screens/ContentLibraryScreen';
+import { DocumentsLibraryScreen } from '../screens/DocumentsLibraryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -47,6 +49,15 @@ function TabNavigator() {
         component={ContentLibraryScreen}
         options={{
           title: 'ספריית תוכן',
+          tabBarIcon: ({ color }) => <MaterialIcons name="photo-library" size={24} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Documents"
+        component={DocumentsLibraryScreen}
+        options={{
+          title: 'מסמכים',
+          tabBarIcon: ({ color }) => <MaterialIcons name="description" size={24} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -60,6 +71,7 @@ export type RootStackParamList = {
   Courses: undefined;
   Schedule: undefined;
   ContentLibrary: undefined;
+  Documents: undefined;
   Lesson: {
     courseId: string;
     chapterId: string;
