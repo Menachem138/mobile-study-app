@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,20 @@ export function BackupSchedule() {
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newTime, setNewTime] = useState('');
+
+  useEffect(() => {
+    const loadBackupPlans = async () => {
+      try {
+        const savedPlans = await AsyncStorage.getItem('backupPlans');
+        if (savedPlans) {
+          setBackupPlans(JSON.parse(savedPlans));
+        }
+      } catch (error) {
+        console.error('Error loading backup plans:', error);
+      }
+    };
+    loadBackupPlans();
+  }, []);
 
   const addBackupPlan = async () => {
     if (!newTitle || !newDescription || !newTime) return;

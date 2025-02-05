@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,20 @@ export function MainSchedule() {
   const [endTime, setEndTime] = useState(new Date());
 
   const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const savedSchedule = await AsyncStorage.getItem('mainSchedule');
+        if (savedSchedule) {
+          setSchedule(JSON.parse(savedSchedule));
+        }
+      } catch (error) {
+        console.error('Error loading schedule:', error);
+      }
+    };
+    loadSchedule();
+  }, []);
 
   const addScheduleItem = async () => {
     const newItem: ScheduleItem = {
