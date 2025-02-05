@@ -6,6 +6,7 @@ import { CalendarScreen } from '../screens/CalendarScreen';
 import { CoursesScreen } from '../screens/CoursesScreen';
 import { LessonScreen } from '../screens/LessonScreen';
 import { ScheduleScreen } from '../screens/ScheduleScreen';
+import { ContentLibraryScreen } from '../screens/ContentLibraryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -41,6 +42,13 @@ function TabNavigator() {
           title: 'לוח זמנים',
         }}
       />
+      <Tab.Screen
+        name="ContentLibrary"
+        component={ContentLibraryScreen}
+        options={{
+          title: 'ספריית תוכן',
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -51,6 +59,7 @@ export type RootStackParamList = {
   Calendar: undefined;
   Courses: undefined;
   Schedule: undefined;
+  ContentLibrary: undefined;
   Lesson: {
     courseId: string;
     chapterId: string;
