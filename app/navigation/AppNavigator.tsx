@@ -2,6 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSupabase } from '../hooks/useSupabase';
+import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { CoursesScreen } from '../screens/CoursesScreen';
@@ -115,6 +117,7 @@ function TabNavigator() {
 }
 
 export type RootStackParamList = {
+  Auth: undefined;
   TabNavigator: undefined;
   Home: undefined;
   Calendar: undefined;
@@ -142,13 +145,27 @@ export type RootStackParamList = {
 };
 
 export function AppNavigator() {
+  const { session, loading } = useSupabase();
+
+  if (loading) {
+    return null; // Or a loading spinner
+  }
+
   return (
     <Stack.Navigator>
-      <Stack.Screen
-        name="TabNavigator"
-        component={TabNavigator}
-        options={{ headerShown: false }}
-      />
+      {!session ? (
+        <Stack.Screen
+          name="Auth"
+          component={AuthScreen}
+          options={{ headerShown: false }}
+        />
+      ) : (
+        <>
+          <Stack.Screen
+            name="TabNavigator"
+            component={TabNavigator}
+            options={{ headerShown: false }}
+          />
       <Stack.Screen
         name="Lesson"
         component={LessonScreen}
@@ -181,6 +198,8 @@ export function AppNavigator() {
           headerBackTitle: 'חזרה',
         }}
       />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

@@ -1,13 +1,80 @@
 import { createClient } from '@supabase/supabase-js';
 import { MediaItem, Album } from '../types/content';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import 'react-native-url-polyfill/auto';
+import { useState, useEffect } from 'react';
 
 // Access environment variables
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
+
+// Enable realtime subscriptions
+supabase.realtime.setAuth(supabaseKey);
 
 export function useSupabase() {
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const signUp = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      if (error) throw error;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      throw error;
+    }
+  };
   const uploadMedia = async (file: any, type: string) => {
     try {
       const fileExt = file.uri.split('.').pop();
@@ -212,6 +279,12 @@ export function useSupabase() {
   };
 
   return {
+    session,
+    user,
+    loading,
+    signIn,
+    signUp,
+    signOut,
     uploadMedia,
     saveMediaItem,
     getMediaItems,
@@ -223,5 +296,6 @@ export function useSupabase() {
     deleteAlbum,
     addItemToAlbum,
     removeItemFromAlbum,
+    supabase,
   };
 }
