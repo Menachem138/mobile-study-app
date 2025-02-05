@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { MediaItem } from '../types/content';
 
 interface AlbumViewerProps {
@@ -22,7 +22,7 @@ interface AlbumViewerProps {
 
 const { width, height } = Dimensions.get('window');
 
-export function AlbumViewer({ items, initialIndex, visible, onClose, onDelete }: AlbumViewerProps) {
+const AlbumViewer = ({ items, initialIndex, visible, onClose, onDelete }: AlbumViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   const handleNext = () => {
@@ -73,7 +73,7 @@ export function AlbumViewer({ items, initialIndex, visible, onClose, onDelete }:
                   source={{ uri: currentItem.url || '' }}
                   style={styles.mediaContent}
                   useNativeControls
-                  resizeMode="contain"
+                  resizeMode={ResizeMode.CONTAIN}
                   shouldPlay={true}
                   isLooping={false}
                 />
@@ -115,6 +115,8 @@ export function AlbumViewer({ items, initialIndex, visible, onClose, onDelete }:
   );
 }
 
+export default AlbumViewer;
+
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
@@ -123,11 +125,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: width * 0.9,
-    maxHeight: height * 0.9,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    overflow: 'hidden',
+    width: width,
+    height: height,
+    backgroundColor: 'transparent',
   },
   navigationContainer: {
     flexDirection: 'row',
@@ -159,8 +159,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   mediaContent: {
-    width: width * 0.7,
-    height: width * 0.7,
+    width: width * 0.9,
+    height: height * 0.6,
+    backgroundColor: 'transparent',
   },
   noteContent: {
     padding: 20,
@@ -173,31 +174,39 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   detailsContainer: {
-    padding: 16,
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1A237E',
+    color: '#FFFFFF',
     marginBottom: 8,
     textAlign: 'right',
   },
   description: {
     fontSize: 16,
-    color: '#263238',
+    color: '#FFFFFF',
     lineHeight: 24,
     textAlign: 'right',
   },
   counter: {
     fontSize: 14,
-    color: '#757575',
-    textAlign: 'center',
+    color: '#CCCCCC',
+    textAlign: 'right',
     marginTop: 8,
   },
   deleteButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
     backgroundColor: '#F44336',
     padding: 16,
-    margin: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
