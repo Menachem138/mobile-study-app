@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { MediaPicker } from '../components/MediaPicker';
 import { useSupabase } from '../hooks/useSupabase';
 import { MediaItem, MediaType } from '../types/content';
@@ -86,7 +86,7 @@ export function ContentLibraryScreen() {
         <Video
           source={{ uri: item.url || '' }}
           style={styles.itemImage}
-          resizeMode="contain"
+          resizeMode={ResizeMode.CONTAIN}
           shouldPlay={false}
           isLooping={false}
           useNativeControls

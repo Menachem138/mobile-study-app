@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 import { MediaItem } from '../types/content';
 
 interface ContentViewerProps {
@@ -49,7 +49,7 @@ export function ContentViewer({ item, visible, onClose, onDelete }: ContentViewe
                 source={{ uri: item.url || '' }}
                 style={styles.mediaContent}
                 useNativeControls
-                resizeMode="contain"
+                resizeMode={ResizeMode.CONTAIN}
                 shouldPlay={true}
                 isLooping={false}
               />

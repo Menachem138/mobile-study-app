@@ -6,6 +6,7 @@ export interface MediaItem {
   description?: string;
   type: MediaType;
   url?: string;
+  content?: string;
   cloudinaryId?: string;
   albumId?: string;
   createdAt: string;
@@ -17,7 +18,7 @@ export interface Album {
   title: string;
   description?: string;
   coverImageUrl?: string;
-  itemCount: number;
+  items: string[]; // Array of MediaItem IDs
   createdAt: string;
   updatedAt: string;
 }

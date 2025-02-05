@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { MediaItem } from '../types/content';
+import { MediaItem, Album } from '../types/content';
 
 // Access environment variables
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -95,11 +95,133 @@ export function useSupabase() {
     }
   };
 
+  const createAlbum = async (album: Partial<Album>) => {
+    try {
+      const { data, error } = await supabase
+        .from('albums')
+        .insert([album])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating album:', error);
+      throw error;
+    }
+  };
+
+  const getAlbums = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('albums')
+        .select('*')
+        .order('createdAt', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching albums:', error);
+      throw error;
+    }
+  };
+
+  const updateAlbum = async (id: string, updates: Partial<Album>) => {
+    try {
+      const { data, error } = await supabase
+        .from('albums')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating album:', error);
+      throw error;
+    }
+  };
+
+  const deleteAlbum = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('albums')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting album:', error);
+      throw error;
+    }
+  };
+
+  const addItemToAlbum = async (albumId: string, itemId: string) => {
+    try {
+      const { data: album } = await supabase
+        .from('albums')
+        .select('items')
+        .eq('id', albumId)
+        .single();
+
+      if (!album) throw new Error('Album not found');
+
+      const items = [...(album.items || []), itemId];
+      
+      const { data, error } = await supabase
+        .from('albums')
+        .update({ items })
+        .eq('id', albumId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error adding item to album:', error);
+      throw error;
+    }
+  };
+
+  const removeItemFromAlbum = async (albumId: string, itemId: string) => {
+    try {
+      const { data: album } = await supabase
+        .from('albums')
+        .select('items')
+        .eq('id', albumId)
+        .single();
+
+      if (!album) throw new Error('Album not found');
+
+      const items = (album.items || []).filter((id: string) => id !== itemId);
+      
+      const { data, error } = await supabase
+        .from('albums')
+        .update({ items })
+        .eq('id', albumId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error removing item from album:', error);
+      throw error;
+    }
+  };
+
   return {
     uploadMedia,
     saveMediaItem,
     getMediaItems,
     deleteMediaItem,
     updateMediaItem,
+    createAlbum,
+    getAlbums,
+    updateAlbum,
+    deleteAlbum,
+    addItemToAlbum,
+    removeItemFromAlbum,
   };
 }
