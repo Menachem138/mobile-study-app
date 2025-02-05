@@ -24,12 +24,12 @@ export function LessonScreen() {
       const savedCourses = await AsyncStorage.getItem('courses');
       if (savedCourses) {
         const courses: Course[] = JSON.parse(savedCourses);
-        const foundCourse = courses.find(c => c.id === courseId);
+        const foundCourse = courses.find((c: Course) => c.id === courseId);
         if (foundCourse) {
           setCourse(foundCourse);
-          const chapter = foundCourse.chapters.find(ch => ch.id === chapterId);
+          const chapter = foundCourse.chapters.find((ch: Chapter) => ch.id === chapterId);
           if (chapter) {
-            const foundLesson = chapter.lessons.find(l => l.id === lessonId);
+            const foundLesson = chapter.lessons.find((l: Lesson) => l.id === lessonId);
             if (foundLesson) {
               setLesson(foundLesson);
             }
@@ -48,14 +48,14 @@ export function LessonScreen() {
       const savedCourses = await AsyncStorage.getItem('courses');
       if (savedCourses) {
         const courses: Course[] = JSON.parse(savedCourses);
-        const updatedCourses = courses.map(c => {
+        const updatedCourses = courses.map((c: Course) => {
           if (c.id === course.id) {
             return {
               ...c,
-              chapters: c.chapters.map(ch => {
+              chapters: c.chapters.map((ch: Chapter) => {
                 return {
                   ...ch,
-                  lessons: ch.lessons.map(l => {
+                  lessons: ch.lessons.map((l: Lesson) => {
                     if (l.id === lesson.id) {
                       return { ...l, completed: !l.completed };
                     }

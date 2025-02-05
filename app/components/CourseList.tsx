@@ -60,7 +60,7 @@ export function CourseList({ courses, onSelectLesson }: CourseListProps) {
               </LinearGradient>
             </TouchableOpacity>
 
-            {isExpanded && course.chapters.map(chapter => {
+            {isExpanded && course.chapters.map((chapter: Chapter) => {
               const chapterProgress = calculateChapterProgress(chapter);
               const isChapterExpanded = expandedChapter === chapter.id;
 
@@ -82,7 +82,7 @@ export function CourseList({ courses, onSelectLesson }: CourseListProps) {
                     {renderProgressBar(chapterProgress.percentageComplete)}
                   </TouchableOpacity>
 
-                  {isChapterExpanded && chapter.lessons.map(lesson => (
+                  {isChapterExpanded && chapter.lessons.map((lesson: Lesson) => (
                     <TouchableOpacity
                       key={lesson.id}
                       style={[styles.lessonItem, lesson.completed && styles.completedLesson]}

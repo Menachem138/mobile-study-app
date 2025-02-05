@@ -50,6 +50,8 @@ export function calculateCourseProgress(course: Course): CourseProgress {
   };
 }
 
+// Types and utility functions are exported above
+
 export function calculateChapterProgress(chapter: Chapter): CourseProgress {
   const totalLessons = chapter.lessons.length;
   const completedLessons = chapter.lessons.filter(lesson => lesson.completed).length;

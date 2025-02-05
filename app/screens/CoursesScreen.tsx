@@ -31,20 +31,7 @@ export function CoursesScreen() {
   }, []);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  useEffect(() => {
-    loadCourses();
-  }, []);
-
-  const loadCourses = async () => {
-    try {
-      const savedCourses = await AsyncStorage.getItem('courses');
-      if (savedCourses) {
-        setCourses(JSON.parse(savedCourses));
-      }
-    } catch (error) {
-      console.error('Error loading courses:', error);
-    }
-  };
+  // Navigation setup
 
   const handleSelectLesson = (courseId: string, chapterId: string, lessonId: string) => {
     // Navigate to lesson screen with the selected lesson
