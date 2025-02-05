@@ -100,7 +100,8 @@ export function JournalScreen({ navigation }: { navigation: any }) {
   };
 
   const renderEntry = ({ item }: { item: JournalEntry }) => {
-    const contentPreview = item.content.slice(0, 100) + (item.content.length > 100 ? '...' : '');
+    const [expanded, setExpanded] = useState(false);
+    const contentPreview = expanded ? item.content : item.content.slice(0, 100) + (item.content.length > 100 ? '...' : '');
 
     return (
       <TouchableOpacity
@@ -122,6 +123,17 @@ export function JournalScreen({ navigation }: { navigation: any }) {
         </View>
 
         <Text style={styles.entryPreview}>{contentPreview}</Text>
+        
+        {item.content.length > 100 && (
+          <TouchableOpacity
+            style={styles.readMoreButton}
+            onPress={() => setExpanded(!expanded)}
+          >
+            <Text style={styles.readMoreText}>
+              {expanded ? 'הצג פחות' : 'קרא עוד'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.tagsContainer}>
           {item.tags.map(tag => (
@@ -313,5 +325,15 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     fontSize: 12,
     textAlign: 'right',
+  },
+  readMoreButton: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  readMoreText: {
+    color: '#1976D2',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

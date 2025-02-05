@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
+import { exportJournalToPDF } from '../utils/pdfExport';
 import { useSupabase } from '../hooks/useSupabase';
 import { JournalEntry, RichTextBlock } from '../types/journal';
 import { MediaPicker } from '../components/MediaPicker';
@@ -130,57 +131,7 @@ export function JournalEntryScreen({ route, navigation }: JournalEntryScreenProp
     ]);
   };
 
-  const editorHtml = `
-    <!DOCTYPE html>
-    <html dir="rtl">
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-          margin: 0;
-          padding: 16px;
-          direction: rtl;
-        }
-        .editor {
-          min-height: 200px;
-          outline: none;
-        }
-        img {
-          max-width: 100%;
-          height: auto;
-        }
-        h1 { font-size: 24px; }
-        h2 { font-size: 20px; }
-        ul { padding-right: 20px; }
-        .checklist {
-          list-style: none;
-          padding: 0;
-        }
-        .checklist-item {
-          display: flex;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-        .checklist-checkbox {
-          margin-left: 8px;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="editor" contenteditable="true"></div>
-      <script>
-        const editor = document.querySelector('.editor');
-        editor.addEventListener('input', () => {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'content',
-            value: editor.innerHTML
-          }));
-        });
-      </script>
-    </body>
-    </html>
-  `;
+  const editorHtml = `<!DOCTYPE html><html dir="rtl"><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px;direction:rtl}.editor{min-height:200px;outline:none}img{max-width:100%;height:auto}h1{font-size:24px}h2{font-size:20px}ul{padding-right:20px}.checklist{list-style:none;padding:0}.checklist-item{display:flex;align-items:center;margin-bottom:8px}.checklist-checkbox{margin-left:8px}</style></head><body><div class="editor" contenteditable="true"></div><script>const editor=document.querySelector('.editor');editor.addEventListener('input',()=>{window.ReactNativeWebView.postMessage(JSON.stringify({type:'content',value:editor.innerHTML}))});editor.addEventListener('paste',(e)=>{e.preventDefault();const text=e.clipboardData.getData('text/plain');const hasMarkdown=/[#*_\`]/.test(text);if(hasMarkdown){const html=text.replace(/^# (.+)$/gm,'<h1>$1</h1>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/\`(.+?)\`/g,'<code>$1</code>').replace(/^\* (.+)$/gm,'<li>$1</li>').replace(/\n\n/g,'<br><br>');document.execCommand('insertHTML',false,html)}else{document.execCommand('insertText',false,text)}});</script></body></html>`;
 
   return (
     <KeyboardAvoidingView
@@ -188,17 +139,27 @@ export function JournalEntryScreen({ route, navigation }: JournalEntryScreenProp
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-          disabled={!title.trim() || saving}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.saveButtonText}>שמור</Text>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={!title.trim() || saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>שמור</Text>
+            )}
+          </TouchableOpacity>
+          {entry && (
+            <TouchableOpacity
+              style={[styles.saveButton, styles.exportButton]}
+              onPress={() => exportJournalToPDF(entry)}
+            >
+              <MaterialIcons name="picture-as-pdf" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
@@ -311,11 +272,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
   },
   saveButton: {
     backgroundColor: '#3F51B5',
@@ -327,6 +291,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
+  },
+  exportButton: {
+    backgroundColor: '#4CAF50',
   },
   content: {
     flex: 1,
