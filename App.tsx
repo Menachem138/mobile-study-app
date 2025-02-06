@@ -3,15 +3,23 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigator } from './app/navigation/AppNavigator';
 import { RealtimeProvider } from './app/providers/RealtimeProvider';
+import { RealtimeSyncProvider } from './app/providers/RealtimeSyncProvider';
+import { RealtimeSyncTest } from './app/components/RealtimeSyncTest';
+import { View } from 'react-native';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <RealtimeProvider>
-          <AppNavigator />
-        </RealtimeProvider>
-      </NavigationContainer>
+      <RealtimeSyncProvider>
+        <NavigationContainer>
+          <RealtimeProvider>
+            <View style={{ flex: 1 }}>
+              <AppNavigator />
+              {__DEV__ && <RealtimeSyncTest />}
+            </View>
+          </RealtimeProvider>
+        </NavigationContainer>
+      </RealtimeSyncProvider>
     </SafeAreaProvider>
   );
 }
