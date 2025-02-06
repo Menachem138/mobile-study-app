@@ -145,8 +145,9 @@ export interface StudyGoal {
   id: string;
   user_id: string;
   title: string;
-  target_hours: number;
-  current_hours: number;
+  description: string;
+  deadline: string | null;
+  completed: boolean;
   created_at: string;
 }
 
@@ -157,6 +158,7 @@ export interface TimerDailySummary {
   total_study_time: number;
   total_break_time: number;
   created_at: string;
+  updated_at: string;
 }
 
 export interface TimerSession {

@@ -6,6 +6,8 @@ import { Database } from '../types/database.types';
 type TableName = keyof Database['public']['Tables'];
 type SyncContextType = {
   triggerSync: (tableName: TableName, action: 'INSERT' | 'UPDATE' | 'DELETE', data: any) => Promise<any>;
+  getSyncErrors: () => any[];
+  clearSyncErrors: () => void;
 };
 
 const RealtimeSyncContext = createContext<SyncContextType | null>(null);
@@ -20,7 +22,7 @@ export function useRealtimeSyncContext() {
 
 export function RealtimeSyncProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = React.useState<string>();
-  const { triggerSync } = useRealtimeSync(userId);
+  const { triggerSync, getSyncErrors, clearSyncErrors } = useRealtimeSync(userId);
 
   useEffect(() => {
     // Set up auth state listener
@@ -45,7 +47,7 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <RealtimeSyncContext.Provider value={{ triggerSync }}>
+    <RealtimeSyncContext.Provider value={{ triggerSync, getSyncErrors, clearSyncErrors }}>
       {children}
     </RealtimeSyncContext.Provider>
   );

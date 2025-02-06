@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Button, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRealtimeSyncContext } from '../providers/RealtimeSyncProvider';
 import { supabase, tables } from '../api/supabaseClient';
 import { Database } from '../types/database.types';
@@ -7,10 +7,13 @@ import { Database } from '../types/database.types';
 type TableName = keyof Database['public']['Tables'];
 
 export function RealtimeSyncTest() {
-  const { triggerSync } = useRealtimeSyncContext();
+  const { triggerSync, getSyncErrors, clearSyncErrors } = useRealtimeSyncContext();
   const [userId, setUserId] = useState<string>();
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
   const [testResults, setTestResults] = useState<Record<TableName, boolean>>({} as any);
+  const [isRunning, setIsRunning] = useState(false);
+  const [currentTable, setCurrentTable] = useState<string>();
+  const [syncErrors, setSyncErrors] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -34,36 +37,123 @@ export function RealtimeSyncTest() {
       // Test data based on table requirements
       const testData = {
         user_id: userId,
-        ...(tableName === 'timer_sessions' && {
-          type: 'study',
-          duration: 1500,
-          started_at: new Date().toISOString(),
-          ended_at: new Date(Date.now() + 1500000).toISOString()
+        ...(tableName === 'achievements' && {
+          type: 'study_milestone',
+          progress: 50,
+          completed: false
+        }),
+        ...(tableName === 'calendar_events' && {
+          title: 'Test Event',
+          description: 'Test event description',
+          start_time: new Date().toISOString(),
+          end_time: new Date(Date.now() + 3600000).toISOString(),
+          is_all_day: false
+        }),
+        ...(tableName === 'chat_messages' && {
+          content: 'Test message',
+          type: 'user'
+        }),
+        ...(tableName === 'content_items' && {
+          type: 'note',
+          content: 'Test content',
+          title: 'Test Content',
+          starred: false,
+          file_path: '',
+          file_name: '',
+          file_size: 0,
+          mime_type: 'text/plain'
+        }),
+        ...(tableName === 'course_progress' && {
+          lesson_id: `test_lesson_${Date.now()}`,
+          completed: false
+        }),
+        ...(tableName === 'documents' && {
+          title: 'Test Document',
+          description: '',
+          type: 'pdf',
+          file_url: 'https://example.com/test.pdf',
+          file_size: 1024
+        }),
+        ...(tableName === 'learning_journal' && {
+          content: 'Test journal entry',
+          is_important: false,
+          type: 'learning',
+          tags: ['test']
+        }),
+        ...(tableName === 'library_items' && {
+          title: 'Test Library Item',
+          content: 'Test content',
+          type: 'document',
+          is_starred: false,
+          file_details: {
+            name: 'test.pdf',
+            path: 'https://example.com/test.pdf',
+            size: 1024,
+            type: 'application/pdf'
+          }
+        }),
+        ...(tableName === 'notifications' && {
+          event_id: `test_${Date.now()}`,
+          event_type: 'calendar',
+          message: 'Test notification',
+          scheduled_for: new Date(Date.now() + 1800000).toISOString(),
+          is_sent: false,
+          phone_number: ''
+        }),
+        ...(tableName === 'progress_tracking' && {
+          course_id: `test_${Date.now()}`,
+          progress: 0
         }),
         ...(tableName === 'questions' && {
           content: 'Test question',
           is_answered: false,
           type: 'general'
         }),
-        ...(tableName === 'user_stats' && {
-          total_points: 0,
-          current_streak: 0,
-          longest_streak: 0,
-          last_activity: new Date().toISOString()
+        ...(tableName === 'schedules' && {
+          day_name: 'יום ראשון',
+          schedule: [
+            { time: '09:00-10:00', activity: 'Test activity' }
+          ]
         }),
         ...(tableName === 'study_goals' && {
-          title: 'Test goal',
-          description: 'Test description',
-          target_date: new Date(Date.now() + 86400000).toISOString()
+          title: 'Test Goal',
+          description: 'Test goal description',
+          deadline: new Date(Date.now() + 86400000).toISOString(),
+          completed: false
         }),
-        ...(tableName === 'documents' && {
-          title: 'Test document',
-          content: 'Test content',
-          type: 'note'
+        ...(tableName === 'timer_daily_summaries' && {
+          date: new Date().toISOString().split('T')[0],
+          total_study_time: 0,
+          total_break_time: 0
         }),
-        ...(tableName === 'learning_journal' && {
-          content: 'Test journal entry',
-          tags: ['test']
+        ...(tableName === 'timer_sessions' && {
+          type: 'study',
+          duration: 1500,
+          started_at: new Date().toISOString(),
+          ended_at: new Date(Date.now() + 1500000).toISOString()
+        }),
+        ...(tableName === 'tweets' && {
+          tweet_id: `test_${Date.now()}`,
+          url: 'https://x.com/test/status/123'
+        }),
+        ...(tableName === 'user_profiles' && {
+          id: userId,  // user_profiles uses id as primary key
+          username: 'test_user',
+          avatar_url: null,
+          preferences: {},
+          learning_goals: { daily: { time: 60, unit: 'minutes' }, monthly: { articles: 10 } },
+          theme: 'light'
+        }),
+        ...(tableName === 'user_stats' && {
+          total_study_time: 0,
+          completed_tasks: 0,
+          streak_days: 0
+        }),
+        ...(tableName === 'youtube_videos' && {
+          title: 'Test Video',
+          url: 'https://youtu.be/test',
+          thumbnail_url: 'https://i.ytimg.com/vi/test/hqdefault.jpg',
+          video_id: 'test'
         })
       };
 
@@ -77,9 +167,27 @@ export function RealtimeSyncTest() {
         addLog(`Testing update for ${tableName}...`);
         const updateData = {
           ...inserted,
-          ...(tableName === 'questions' && { content: 'Updated test question' }),
-          ...(tableName === 'documents' && { title: 'Updated test document' }),
-          ...(tableName === 'learning_journal' && { content: 'Updated test entry' })
+          ...(tableName === 'achievements' && { progress: 75 }),
+          ...(tableName === 'calendar_events' && { description: 'Updated event description' }),
+          ...(tableName === 'chat_messages' && { content: 'Updated message' }),
+          ...(tableName === 'content_items' && { content: 'Updated content' }),
+          ...(tableName === 'course_progress' && { completed: true }),
+          ...(tableName === 'documents' && { description: 'Updated description' }),
+          ...(tableName === 'learning_journal' && { content: 'Updated journal entry' }),
+          ...(tableName === 'library_items' && { title: 'Updated library item' }),
+          ...(tableName === 'notifications' && { message: 'Updated notification' }),
+          ...(tableName === 'progress_tracking' && { progress: 50 }),
+          ...(tableName === 'questions' && { content: 'Updated question' }),
+          ...(tableName === 'schedules' && { 
+            schedule: [{ time: '10:00-11:00', activity: 'Updated activity' }]
+          }),
+          ...(tableName === 'study_goals' && { description: 'Updated goal description' }),
+          ...(tableName === 'timer_daily_summaries' && { total_study_time: 1500 }),
+          ...(tableName === 'timer_sessions' && { duration: 1800 }),
+          ...(tableName === 'tweets' && { url: 'https://x.com/test/status/456' }),
+          ...(tableName === 'user_profiles' && { username: 'updated_test_user' }),
+          ...(tableName === 'user_stats' && { total_study_time: 3600 }),
+          ...(tableName === 'youtube_videos' && { title: 'Updated Video Title' })
         };
         await triggerSync(tableName, 'UPDATE', updateData);
         addLog(`Successfully updated record in ${tableName}`);
@@ -93,19 +201,36 @@ export function RealtimeSyncTest() {
       setTestResults(prev => ({ ...prev, [tableName]: true }));
       addLog(`All operations successful for ${tableName}`);
     } catch (error) {
-      console.error(`Error testing ${tableName}:`, error);
+      const err = error as Error;
+      console.error(`Error testing ${tableName}:`, err);
       setTestResults(prev => ({ ...prev, [tableName]: false }));
-      addLog(`Error testing ${tableName}: ${error.message}`);
+      addLog(`Error testing ${tableName}: ${err.message}`);
     }
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSyncErrors(getSyncErrors());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [getSyncErrors]);
+
   const testAllTables = async () => {
-    setSyncLogs([]);
-    setTestResults({} as any);
-    
-    const tableNames = Object.keys(tables) as TableName[];
-    for (const tableName of tableNames) {
-      await testTable(tableName);
+    try {
+      setIsRunning(true);
+      setSyncLogs([]);
+      setTestResults({} as any);
+      clearSyncErrors();
+      
+      const tableNames = Object.keys(tables) as TableName[];
+      for (const tableName of tableNames) {
+        setCurrentTable(tableName);
+        await testTable(tableName);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause between tables
+      }
+    } finally {
+      setIsRunning(false);
+      setCurrentTable(undefined);
     }
   };
 
@@ -114,9 +239,28 @@ export function RealtimeSyncTest() {
       <Text style={styles.title}>Realtime Sync Test</Text>
       
       <Button 
-        title="Test All Tables"
+        title={isRunning ? "Testing..." : "Test All Tables"}
         onPress={testAllTables}
+        disabled={isRunning}
       />
+      
+      {isRunning && (
+        <View style={styles.progressContainer}>
+          <ActivityIndicator />
+          <Text style={styles.progressText}>Testing table: {currentTable}</Text>
+        </View>
+      )}
+
+      {syncErrors.length > 0 && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Sync Errors ({syncErrors.length}):</Text>
+          {syncErrors.map((error, index) => (
+            <Text key={index} style={styles.error}>
+              {error.tableName} - {error.operation}: {error.error.message}
+            </Text>
+          ))}
+        </View>
+      )}
 
       <View style={styles.resultsContainer}>
         <Text style={styles.subtitle}>Test Results:</Text>
@@ -169,5 +313,32 @@ const styles = StyleSheet.create({
   log: {
     fontSize: 12,
     marginBottom: 4
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    padding: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8
+  },
+  progressText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666'
+  },
+  errorContainer: {
+    marginVertical: 16,
+    padding: 16,
+    backgroundColor: '#fff0f0',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffcdd2'
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#d32f2f',
+    marginBottom: 8
   }
 });

@@ -1,13 +1,24 @@
-import { useEffect, useRef } from 'react';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { useEffect, useRef, useCallback } from 'react';
+import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase, tables } from '../api/supabaseClient';
 import { Database } from '../types/database.types';
 
 type TableName = keyof Database['public']['Tables'];
+type SyncError = {
+  tableName: TableName;
+  operation: 'INSERT' | 'UPDATE' | 'DELETE';
+  error: Error;
+  timestamp: Date;
+  retryCount: number;
+};
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
 export function useRealtimeSync(userId: string | undefined) {
   const channelsRef = useRef<Record<TableName, RealtimeChannel>>({} as any);
   const tablesRef = useRef<Set<TableName>>(new Set());
+  const errorsRef = useRef<SyncError[]>([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -34,45 +45,17 @@ export function useRealtimeSync(userId: string | undefined) {
               console.log(`Realtime update for ${tableName}:`, payload);
 
               try {
-                switch (payload.eventType) {
-                  case 'INSERT': {
-                    // Handle new record
-                    const { data, error } = await tables[tableName]()
-                      .select('*')
-                      .eq('id', payload.new.id)
-                      .single();
-
-                    if (error) throw error;
-                    // Emit event for UI updates
-                    window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
-                      detail: { type: 'INSERT', data }
-                    }));
-                    break;
-                  }
-                  case 'UPDATE': {
-                    // Handle updated record
-                    const { data, error } = await tables[tableName]()
-                      .select('*')
-                      .eq('id', payload.new.id)
-                      .single();
-
-                    if (error) throw error;
-                    window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
-                      detail: { type: 'UPDATE', data }
-                    }));
-                    break;
-                  }
-                  case 'DELETE': {
-                    // Handle deleted record
-                    window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
-                      detail: { type: 'DELETE', id: payload.old.id }
-                    }));
-                    break;
-                  }
-                }
+                await handleRealtimeChange(tableName, payload);
               } catch (error) {
-                console.error(`Error handling ${tableName} sync:`, error);
-                // Retry logic could be implemented here
+                const syncError: SyncError = {
+                  tableName,
+                  operation: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+                  error: error as Error,
+                  timestamp: new Date(),
+                  retryCount: 0
+                };
+                errorsRef.current.push(syncError);
+                await retryOperation(tableName, payload, syncError);
               }
             }
           )
@@ -90,49 +73,136 @@ export function useRealtimeSync(userId: string | undefined) {
     setupRealtimeSync();
 
     // Cleanup function
+    const handleRealtimeChange = async (tableName: TableName, payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
+      switch (payload.eventType) {
+        case 'INSERT': {
+          const { data, error } = await tables[tableName]()
+            .select('*')
+            .eq('id', payload.new.id)
+            .single();
+
+          if (error) throw error;
+          window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
+            detail: { type: 'INSERT', data }
+          }));
+          break;
+        }
+        case 'UPDATE': {
+          const { data, error } = await tables[tableName]()
+            .select('*')
+            .eq('id', payload.new.id)
+            .single();
+
+          if (error) throw error;
+          window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
+            detail: { type: 'UPDATE', data }
+          }));
+          break;
+        }
+        case 'DELETE': {
+          window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
+            detail: { type: 'DELETE', id: payload.old.id }
+          }));
+          break;
+        }
+      }
+    };
+
+    const retryOperation = async (
+      tableName: TableName,
+      payload: RealtimePostgresChangesPayload<{ [key: string]: any }>,
+      syncError: SyncError
+    ) => {
+      if (syncError.retryCount >= MAX_RETRIES) {
+        console.error(`Max retries reached for ${tableName} sync:`, syncError);
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (syncError.retryCount + 1)));
+      
+      try {
+        await handleRealtimeChange(tableName, payload);
+        // Remove error if retry succeeds
+        errorsRef.current = errorsRef.current.filter(e => e !== syncError);
+      } catch (error) {
+        syncError.retryCount++;
+        syncError.error = error as Error;
+        syncError.timestamp = new Date();
+        await retryOperation(tableName, payload, syncError);
+      }
+    };
+
     return () => {
       Object.values(channelsRef.current).forEach(channel => {
         channel.unsubscribe();
       });
       channelsRef.current = {} as any;
       tablesRef.current.clear();
+      errorsRef.current = [];
     };
   }, [userId]);
 
-  return {
-    // Helper function to manually trigger sync
-    triggerSync: async (tableName: TableName, action: 'INSERT' | 'UPDATE' | 'DELETE', data: any) => {
-      try {
-        switch (action) {
-          case 'INSERT': {
-            const { data: inserted, error } = await tables[tableName]()
-              .insert(data)
-              .select()
-              .single();
-            if (error) throw error;
-            return inserted;
-          }
-          case 'UPDATE': {
-            const { data: updated, error } = await tables[tableName]()
-              .update(data)
-              .eq('id', data.id)
-              .select()
-              .single();
-            if (error) throw error;
-            return updated;
-          }
-          case 'DELETE': {
-            const { error } = await tables[tableName]()
-              .delete()
-              .eq('id', data.id);
-            if (error) throw error;
-            return data.id;
-          }
+  const getSyncErrors = useCallback(() => errorsRef.current, []);
+  const clearSyncErrors = useCallback(() => {
+    errorsRef.current = [];
+  }, []);
+
+  const triggerSync = async (tableName: TableName, action: 'INSERT' | 'UPDATE' | 'DELETE', data: any) => {
+    try {
+      let result;
+      switch (action) {
+        case 'INSERT': {
+          const { data: inserted, error } = await tables[tableName]()
+            .insert(tableName === 'user_profiles' ? data : { ...data, user_id: userId })
+            .select()
+            .single();
+          if (error) throw error;
+          result = inserted;
+          break;
         }
-      } catch (error) {
-        console.error(`Error triggering sync for ${tableName}:`, error);
-        throw error;
+        case 'UPDATE': {
+          const { data: updated, error } = await tables[tableName]()
+            .update(data)
+            .eq('id', data.id)
+            .select()
+            .single();
+          if (error) throw error;
+          result = updated;
+          break;
+        }
+        case 'DELETE': {
+          const { error } = await tables[tableName]()
+            .delete()
+            .eq('id', data.id);
+          if (error) throw error;
+          result = data.id;
+          break;
+        }
       }
+
+      // Dispatch event to notify UI
+      window.dispatchEvent(new CustomEvent(`${tableName}_updated`, {
+        detail: { type: action, data: result }
+      }));
+
+      return result;
+    } catch (error) {
+      const syncError: SyncError = {
+        tableName,
+        operation: action,
+        error: error as Error,
+        timestamp: new Date(),
+        retryCount: 0
+      };
+      errorsRef.current.push(syncError);
+      console.error(`Error triggering sync for ${tableName}:`, error);
+      throw error;
     }
+  };
+
+  return {
+    triggerSync,
+    getSyncErrors,
+    clearSyncErrors
   };
 }

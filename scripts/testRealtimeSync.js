@@ -2,18 +2,33 @@ const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 // Use service role key for testing
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.error('Missing required environment variables');
-  process.exit(1);
-}
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function testRealtimeSync() {
   try {
+    // Set up realtime subscription
+    const channel = supabase.channel('db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public'
+        },
+        (payload) => {
+          console.log('\nRealtime change received:', {
+            table: payload.table,
+            event: payload.eventType,
+            data: payload.new || payload.old
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
+
     // Create a test user with a temporary random password
     const timestamp = Date.now();
     const testEmail = `test_${timestamp}@example.com`;
@@ -110,20 +125,111 @@ async function testRealtimeSync() {
     if (questionError) throw questionError;
     console.log('Created question:', question);
 
-    // Wait for 5 seconds to observe realtime updates
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // Test study_goals table
+    const { data: studyGoal, error: studyGoalError } = await supabase
+      .from('study_goals')
+      .insert([{
+        user_id: user.id,
+        title: 'Test Study Goal',
+        description: 'Test goal for realtime sync',
+        deadline: new Date(Date.now() + 86400000).toISOString(),
+        completed: false,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (studyGoalError) {
+      console.error('Error creating study goal:', studyGoalError);
+    } else {
+      console.log('Created study goal:', studyGoal);
+    }
+
+    // Test user_profiles table update (since it's created automatically)
+    const { data: userProfile, error: profileError } = await supabase
+      .from('user_profiles')
+      .update({
+        username: `test_${Date.now()}`,
+        learning_goals: {
+          daily: { time: 120, unit: 'minutes' },
+          monthly: { articles: 10 }
+        },
+        theme: 'light',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('Error updating user profile:', profileError);
+    } else {
+      console.log('Updated user profile:', userProfile);
+    }
+
+    // Test timer_daily_summaries table
+    const { data: timerSummary, error: summaryError } = await supabase
+      .from('timer_daily_summaries')
+      .insert([{
+        user_id: user.id,
+        date: new Date().toISOString().split('T')[0],
+        total_study_time: 3600,
+        total_break_time: 600,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (summaryError) {
+      console.error('Error creating timer summary:', summaryError);
+    } else {
+      console.log('Created timer summary:', timerSummary);
+    }
+
+    // Wait for 10 seconds to observe realtime updates
+    console.log('\nWaiting for 10 seconds to observe realtime updates...');
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
+    // Test updates
+    if (studyGoal) {
+      const { error: updateError } = await supabase
+        .from('study_goals')
+        .update({ completed: true })
+        .eq('id', studyGoal.id);
+
+      if (updateError) {
+        console.error('Error updating study goal:', updateError);
+      } else {
+        console.log('Updated study goal completed status');
+      }
+    }
+
+    // Wait for update to sync
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Cleanup test data
-    const tables = ['timer_sessions', 'calendar_events', 'content_items', 'questions'];
+    const tables = [
+      'timer_sessions', 
+      'calendar_events', 
+      'content_items', 
+      'questions',
+      'study_goals',
+      'timer_daily_summaries',
+      'user_profiles'
+    ];
+
+    console.log('\nCleaning up test data...');
     for (const table of tables) {
       const { error: deleteError } = await supabase
         .from(table)
         .delete()
-        .eq('user_id', user.id)
-        .gt('created_at', new Date(Date.now() - 60000).toISOString());
+        .eq(table === 'user_profiles' ? 'id' : 'user_id', user.id);
 
       if (deleteError) {
         console.error(`Error cleaning up ${table}:`, deleteError);
+      } else {
+        console.log(`Cleaned up ${table}`);
       }
     }
 
@@ -131,9 +237,13 @@ async function testRealtimeSync() {
     const { error: deleteUserError } = await supabase.auth.admin.deleteUser(user.id);
     if (deleteUserError) {
       console.error('Error deleting test user:', deleteUserError);
+    } else {
+      console.log('Deleted test user');
     }
 
-    console.log('Test completed successfully');
+    // Cleanup channel subscription
+    channel.unsubscribe();
+    console.log('\nTest completed successfully');
   } catch (error) {
     console.error('Test failed:', error);
   }
