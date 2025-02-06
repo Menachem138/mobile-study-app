@@ -4,8 +4,9 @@ import { Timer } from '../components/Timer';
 import { MotivationBox } from '../components/MotivationBox';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSupabase } from '../hooks/useSupabase';
+import { RealtimeTest } from '../components/RealtimeTest';
 
-export function HomeScreen({ navigation }) {
+export function HomeScreen({ navigation }: { navigation: any }) {
   const { signOut } = useSupabase();
 
   React.useEffect(() => {
@@ -26,6 +27,7 @@ export function HomeScreen({ navigation }) {
       <View style={styles.container}>
         <Timer />
         <MotivationBox />
+        <RealtimeTest />
       </View>
     </SafeAreaView>
   );
