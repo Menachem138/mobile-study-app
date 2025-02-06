@@ -41,23 +41,62 @@ export function useRealtimeSubscriptions(callbacks: TableCallbacks = {}) {
       'youtube_videos'
     ];
 
-    const channels = tables.map(table => 
-      supabase
+    const channels = tables.map(table => {
+      const channel = supabase
         .channel(`${table}_changes`)
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table,
           filter: `user_id=eq.${userId}`
-        }, (payload) => callbacks[table]?.(payload))
-    );
+        }, (payload) => {
+          try {
+            callbacks[table]?.(payload);
+          } catch (error) {
+            console.error(`Error in ${table} callback:`, error);
+          }
+        })
+        .on('error', (_: string, error: Error) => {
+          console.error(`Channel ${table} error:`, error);
+        })
+        .on('disconnect', (_: string) => {
+          console.warn(`Channel ${table} disconnected`);
+        })
+        .on('reconnect', (_: string) => {
+          console.log(`Channel ${table} reconnected`);
+        });
+
+      return channel;
+    });
+
+    // Subscribe to all channels with retry logic
+    const subscribeWithRetry = async (channel: ReturnType<typeof supabase.channel>, retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const { error } = await channel.subscribe();
+          if (!error) return;
+          console.error(`Subscription error (attempt ${i + 1}/${retries}):`, error);
+        } catch (error) {
+          console.error(`Subscription error (attempt ${i + 1}/${retries}):`, error);
+        }
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+        }
+      }
+    };
 
     // Subscribe to all channels
-    channels.forEach(channel => channel.subscribe());
+    channels.forEach(channel => subscribeWithRetry(channel));
 
     // Cleanup: unsubscribe from all channels
     return () => {
-      channels.forEach(channel => channel.unsubscribe());
+      channels.forEach(channel => {
+        try {
+          channel.unsubscribe();
+        } catch (error) {
+          console.error('Error unsubscribing from channel:', error);
+        }
+      });
     };
   }, [session?.user?.id, callbacks]);
 }

@@ -9,15 +9,42 @@ export function RealtimeTest() {
 
   useEffect(() => {
     const handleUpdate = (payload: RealtimePostgresChangesPayload<any>) => {
-      setLastUpdate(`Table ${payload.table} updated at ${new Date().toLocaleTimeString()}`);
+      const eventType = payload.eventType;
+      const record = payload.new || payload.old;
+      setLastUpdate(
+        `${eventType.toUpperCase()} on ${payload.table} at ${new Date().toLocaleTimeString()}\n` +
+        `Record ID: ${record?.id}`
+      );
     };
 
-    ['questions', 'timer_sessions', 'study_goals'].forEach(table => {
+    const tables = [
+      'achievements',
+      'calendar_events',
+      'chat_messages',
+      'content_items',
+      'course_progress',
+      'documents',
+      'learning_journal',
+      'library_items',
+      'notifications',
+      'progress_tracking',
+      'questions',
+      'schedules',
+      'study_goals',
+      'timer_daily_summaries',
+      'timer_sessions',
+      'tweets',
+      'user_profiles',
+      'user_stats',
+      'youtube_videos'
+    ];
+
+    tables.forEach(table => {
       addCallback(table, handleUpdate);
     });
 
     return () => {
-      ['questions', 'timer_sessions', 'study_goals'].forEach(table => {
+      tables.forEach(table => {
         removeCallback(table);
       });
     };
@@ -36,10 +63,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     margin: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   text: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
     textAlign: 'center',
+    fontFamily: 'System',
+    lineHeight: 20,
   },
 });
