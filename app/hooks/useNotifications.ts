@@ -64,12 +64,12 @@ export function useNotifications() {
         },
         trigger: trigger.dateTime 
           ? { 
+              channelId: 'default',
               date: trigger.dateTime,
-              repeats: trigger.repeats || false,
             }
           : { 
-              seconds: trigger.seconds || 1, 
-              repeats: trigger.repeats || false,
+              channelId: 'default',
+              seconds: trigger.seconds || 1,
             },
       });
       return identifier;
