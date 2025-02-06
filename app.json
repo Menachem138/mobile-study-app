@@ -33,6 +33,10 @@
       "eas": {
         "projectId": "study-time-manager"
       }
+    },
+    "developmentClient": false,
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     }
   }
 }
