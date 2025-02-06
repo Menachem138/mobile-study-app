@@ -51,28 +51,81 @@ export class NotificationService {
 
     if (!schedules) return [];
 
-    return schedules.flatMap(schedule => {
-      return schedule.schedule.map(slot => {
-        const [hours, minutes] = slot.time.split(':');
-        const scheduleTime = new Date();
-        scheduleTime.setHours(parseInt(hours, 10));
-        scheduleTime.setMinutes(parseInt(minutes, 10));
-        scheduleTime.setSeconds(0);
+    const notifications: NotificationSchedule[] = [];
 
-        if (scheduleTime < new Date()) {
-          scheduleTime.setDate(scheduleTime.getDate() + 1);
-        }
+    for (const schedule of schedules) {
+      // Schedule reminders for study sessions
+      if (schedule.schedule) {
+        for (const slot of schedule.schedule) {
+          const [hours, minutes] = slot.time.split(':');
+          const scheduleTime = new Date();
+          scheduleTime.setHours(parseInt(hours, 10));
+          scheduleTime.setMinutes(parseInt(minutes, 10) - 15); // 15 minutes before
+          scheduleTime.setSeconds(0);
 
-        return {
-          title: 'Schedule Reminder',
-          body: `Time for: ${slot.activity}`,
-          data: { scheduleId: schedule.id, activity: slot.activity },
-          trigger: { 
-            dateTime: scheduleTime,
-            repeats: true
+          if (scheduleTime < new Date()) {
+            scheduleTime.setDate(scheduleTime.getDate() + 1);
           }
-        };
-      });
-    });
+
+          notifications.push({
+            title: 'Upcoming Study Session',
+            body: `Your ${slot.activity} session starts in 15 minutes`,
+            data: { scheduleId: schedule.id, activity: slot.activity },
+            trigger: { 
+              dateTime: scheduleTime,
+              repeats: true
+            }
+          });
+        }
+      }
+
+      // Schedule break reminders
+      const { data: timerSessions } = await supabase
+        .from('timer_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('type', 'study')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (timerSessions?.[0]) {
+        const lastSession = timerSessions[0];
+        const breakTime = new Date(lastSession.ended_at);
+        
+        if (breakTime > new Date()) {
+          notifications.push({
+            title: 'Break Time',
+            body: 'Time for a short break to refresh your mind',
+            data: { sessionId: lastSession.id },
+            trigger: { dateTime: breakTime }
+          });
+        }
+      }
+    }
+
+    // Add task deadline reminders
+    const { data: tasks } = await supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('start_time', new Date().toISOString());
+
+    if (tasks) {
+      for (const task of tasks) {
+        const reminderTime = new Date(task.start_time);
+        reminderTime.setMinutes(reminderTime.getMinutes() - 30); // 30 minutes before
+
+        if (reminderTime > new Date()) {
+          notifications.push({
+            title: 'Task Reminder',
+            body: `Task "${task.title}" starts in 30 minutes`,
+            data: { taskId: task.id },
+            trigger: { dateTime: reminderTime }
+          });
+        }
+      }
+    }
+
+    return notifications;
   }
 }

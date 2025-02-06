@@ -41,17 +41,42 @@ export function useNotifications() {
   }, []);
 
   const scheduleNotification = async ({ title, body, data, trigger }: NotificationSchedule) => {
-    const identifier = await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: data || {},
-      },
-      trigger: trigger.dateTime 
-        ? { date: trigger.dateTime }
-        : { seconds: trigger.seconds || 1, repeats: trigger.repeats || false },
-    });
-    return identifier;
+    try {
+      // Configure notification behavior
+      await Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        }),
+      });
+
+      // Schedule the notification
+      const identifier = await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data: data || {},
+          sound: 'default',
+          priority: 'high',
+          vibrate: [0, 250, 250, 250],
+        },
+        trigger: trigger.dateTime 
+          ? { 
+              date: trigger.dateTime,
+              repeats: trigger.repeats || false,
+            }
+          : { 
+              seconds: trigger.seconds || 1, 
+              repeats: trigger.repeats || false,
+            },
+      });
+      return identifier;
+    } catch (error) {
+      console.error('Failed to schedule notification:', error);
+      throw error;
+    }
   };
 
   const cancelNotification = async (identifier: string) => {
