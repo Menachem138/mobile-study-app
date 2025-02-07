@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Button, Text, StyleSheet } from 'react-native';
 import { useNotifications } from '../hooks/useNotifications';
 import { NotificationService } from '../services/NotificationService';
@@ -11,14 +11,35 @@ export function NotificationTest() {
     cancelAllNotifications
   } = useNotifications();
 
-  useEffect(() => {
-    const setupTestData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const [error, setError] = useState<string>();
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    console.log('Push Token Status:', { expoPushToken });
+    if (!expoPushToken) {
+      console.log('No push token available yet');
+      setError('Push token not available. Please check permissions and try again.');
+      return;
+    }
+    console.log('Push token successfully obtained:', expoPushToken);
+    
+    const setupTestData = async () => {
       try {
+        setIsLoading(true);
+        setError(undefined);
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          setError(`Auth error: ${authError.message}`);
+          return;
+        }
+        
+        if (!user) {
+          setError('No authenticated user found');
+          return;
+        }
         // Create test calendar event
-        const { data: event } = await supabase
+        const { data: event, error: eventError } = await supabase
           .from('calendar_events')
           .insert({
             user_id: user.id,
@@ -31,9 +52,19 @@ export function NotificationTest() {
           .select()
           .single();
 
+        if (eventError) {
+          setError(`Calendar event error: ${eventError.message}`);
+          return;
+        }
+
         if (event) {
-          const reminder = await NotificationService.scheduleTaskReminder(event);
-          await scheduleNotification(reminder);
+          try {
+            const reminder = await NotificationService.scheduleTaskReminder(event);
+            await scheduleNotification(reminder);
+          } catch (reminderError) {
+            setError(`Failed to schedule reminder: ${reminderError instanceof Error ? reminderError.message : 'Unknown error'}`);
+            return;
+          }
         }
 
         // Create test timer sessions
@@ -55,19 +86,29 @@ export function NotificationTest() {
           }
         ];
 
-        const { data: session } = await supabase
+        const { data: session, error: sessionError } = await supabase
           .from('timer_sessions')
           .insert(sessions)
           .select()
           .single();
 
+        if (sessionError) {
+          setError(`Timer session error: ${sessionError.message}`);
+          return;
+        }
+
         if (session) {
-          const breakAlert = await NotificationService.scheduleStudyBreakAlert(session);
-          await scheduleNotification(breakAlert);
+          try {
+            const breakAlert = await NotificationService.scheduleStudyBreakAlert(session);
+            await scheduleNotification(breakAlert);
+          } catch (breakError) {
+            setError(`Failed to schedule break alert: ${breakError instanceof Error ? breakError.message : 'Unknown error'}`);
+            return;
+          }
         }
 
         // Create test study goal
-        const { data: goal } = await supabase
+        const { data: goal, error: goalError } = await supabase
           .from('study_goals')
           .insert({
             user_id: user.id,
@@ -79,20 +120,38 @@ export function NotificationTest() {
           .select()
           .single();
 
+        if (goalError) {
+          setError(`Study goal error: ${goalError.message}`);
+          return;
+        }
+
         if (goal) {
-          const goalReminder = await NotificationService.scheduleGoalReminder(goal);
-          if (goalReminder) {
-            await scheduleNotification(goalReminder);
+          try {
+            const goalReminder = await NotificationService.scheduleGoalReminder(goal);
+            if (goalReminder) {
+              await scheduleNotification(goalReminder);
+            }
+          } catch (reminderError) {
+            setError(`Failed to schedule goal reminder: ${reminderError instanceof Error ? reminderError.message : 'Unknown error'}`);
+            return;
           }
         }
 
         // Schedule reminders based on user's schedule
-        const scheduleReminders = await NotificationService.scheduleScheduleReminders(user.id);
-        for (const reminder of scheduleReminders) {
-          await scheduleNotification(reminder);
+        try {
+          const scheduleReminders = await NotificationService.scheduleScheduleReminders(user.id);
+          for (const reminder of scheduleReminders) {
+            await scheduleNotification(reminder);
+          }
+        } catch (scheduleError) {
+          setError(`Failed to schedule reminders: ${scheduleError instanceof Error ? scheduleError.message : 'Unknown error'}`);
+          return;
         }
       } catch (error) {
         console.error('Error setting up test notifications:', error);
+        setError(`Error setting up notifications: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -103,6 +162,9 @@ export function NotificationTest() {
     <View style={styles.container}>
       <Text style={styles.title}>Notification Test Panel</Text>
       <Text style={styles.token}>Push Token: {expoPushToken || 'Not available'}</Text>
+      
+      {error && <Text style={styles.error}>{error}</Text>}
+      {isLoading && <Text style={styles.loading}>Loading...</Text>}
       
       <View style={styles.buttonContainer}>
         <Button 
@@ -130,6 +192,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     margin: 16,
   },
+  error: {
+    color: 'red',
+    marginVertical: 8,
+  },
+  loading: {
+    color: '#666',
+    marginVertical: 8,
+  },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -155,4 +225,3 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-  }, [scheduleNotification]);
