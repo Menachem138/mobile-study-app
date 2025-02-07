@@ -13,12 +13,19 @@ export function NotificationTest() {
 
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
+  const [tokenStatus, setTokenStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   useEffect(() => {
+    if (expoPushToken) {
+      setTokenStatus('success');
+      setError(undefined);
+    } else {
+      setTokenStatus('error');
+    }
     console.log('Push Token Status:', { 
       expoPushToken,
-      EXPO_PROJECT_ID: process.env.EXPO_PROJECT_ID,
-      EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL
+      tokenStatus,
+      Platform: Platform.OS
     });
     
     if (!process.env.EXPO_PROJECT_ID) {
@@ -173,10 +180,16 @@ export function NotificationTest() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Notification Test Panel</Text>
-      <Text style={styles.token}>Push Token: {expoPushToken || 'Not available'}</Text>
+      <Text style={[styles.token, !expoPushToken && styles.tokenUnavailable]}>
+        Push Token: {expoPushToken || 'Not available'}
+      </Text>
       
       {error && <Text style={styles.error}>{error}</Text>}
       {isLoading && <Text style={styles.loading}>Loading...</Text>}
+      
+      <Text style={styles.status}>
+        Token Status: {tokenStatus}
+      </Text>
       
       <View style={styles.buttonContainer}>
         <Button 
@@ -227,6 +240,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginBottom: 16,
+  },
+  tokenUnavailable: {
+    color: '#ff6b6b',
+  },
+  status: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
   },
   description: {
     fontSize: 14,
