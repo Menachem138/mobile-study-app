@@ -155,40 +155,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-  }, []);
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Notification Test Panel</Text>
-      <Text style={styles.token}>Push Token: {expoPushToken || 'Not available'}</Text>
-      <View style={styles.buttonContainer}>
-        <Button 
-          title="Cancel All Notifications" 
-          onPress={cancelAllNotifications}
-        />
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    margin: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  token: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 16,
-  },
-  buttonContainer: {
-    marginTop: 8,
-  },
-});
+  }, [scheduleNotification]);
