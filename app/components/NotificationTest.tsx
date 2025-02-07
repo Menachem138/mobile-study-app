@@ -16,17 +16,40 @@ export function NotificationTest() {
   const [tokenStatus, setTokenStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   useEffect(() => {
-    if (expoPushToken) {
-      setTokenStatus('success');
-      setError(undefined);
-    } else {
-      setTokenStatus('error');
-    }
-    console.log('Push Token Status:', { 
-      expoPushToken,
-      tokenStatus,
-      Platform: Platform.OS
-    });
+    const checkToken = async () => {
+      try {
+        if (expoPushToken) {
+          setTokenStatus('success');
+          setError(undefined);
+          console.log('Push token obtained successfully:', expoPushToken);
+        } else {
+          setTokenStatus('error');
+          console.log('No push token available');
+        }
+        
+        console.log('Environment Status:', { 
+          Platform: Platform.OS,
+          Constants: {
+            appOwnership: Constants.appOwnership,
+            executionEnvironment: Constants.executionEnvironment,
+            manifest: Constants.manifest
+          }
+        });
+
+        // Check if we're running in Expo Go
+        if (Constants.appOwnership !== 'expo') {
+          setError('This app must be run in Expo Go');
+          setTokenStatus('error');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking push token:', error);
+        setError(`Token error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setTokenStatus('error');
+      }
+    };
+    
+    checkToken();
     
     if (!process.env.EXPO_PROJECT_ID) {
       console.error('Missing EXPO_PROJECT_ID environment variable');
