@@ -15,12 +15,24 @@ export function NotificationTest() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Push Token Status:', { expoPushToken });
+    console.log('Push Token Status:', { 
+      expoPushToken,
+      EXPO_PROJECT_ID: process.env.EXPO_PROJECT_ID,
+      EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL
+    });
+    
+    if (!process.env.EXPO_PROJECT_ID) {
+      console.error('Missing EXPO_PROJECT_ID environment variable');
+      setError('Configuration error: Missing project ID');
+      return;
+    }
+    
     if (!expoPushToken) {
       console.log('No push token available yet');
       setError('Push token not available. Please check permissions and try again.');
       return;
     }
+    
     console.log('Push token successfully obtained:', expoPushToken);
     
     const setupTestData = async () => {
