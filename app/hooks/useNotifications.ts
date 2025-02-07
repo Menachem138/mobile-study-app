@@ -120,6 +120,10 @@ async function registerForPushNotificationsAsync() {
 
     console.log('Permissions granted, getting push token...');
     console.log('Getting push token with project ID:', process.env.EXPO_PROJECT_ID);
+    console.log('Environment:', {
+      EXPO_PROJECT_ID: process.env.EXPO_PROJECT_ID,
+      EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+    });
     const response = await Notifications.getExpoPushTokenAsync({
       projectId: process.env.EXPO_PROJECT_ID || 'study-time-manager'
     });
