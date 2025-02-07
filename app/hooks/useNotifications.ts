@@ -120,14 +120,15 @@ async function registerForPushNotificationsAsync() {
 
     console.log('Permissions granted, getting push token...');
     console.log('Getting push token with project ID:', process.env.EXPO_PROJECT_ID);
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId || 'study-time-manager';
+    const projectId = 'study-time-manager';
     console.log('Environment check:', {
       projectId,
       Platform: Platform.OS,
       Constants: {
         expoConfig: Constants.expoConfig,
-        projectId: Constants.expoConfig?.extra?.eas?.projectId,
-        manifest: Constants.manifest
+        manifest: Constants.manifest,
+        appOwnership: Constants.appOwnership,
+        executionEnvironment: Constants.executionEnvironment
       }
     });
     
