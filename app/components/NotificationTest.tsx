@@ -16,12 +16,17 @@ export function NotificationTest() {
   const [tokenStatus, setTokenStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [deviceInfo, setDeviceInfo] = useState<string>();
   const [envInfo, setEnvInfo] = useState<string>();
+  const [projectId, setProjectId] = useState<string>();
 
   useEffect(() => {
     const checkToken = async () => {
       try {
+        const projectId = process.env.EXPO_PROJECT_ID || 'study-time-manager';
+        setProjectId(projectId);
         setDeviceInfo(`Platform: ${Platform.OS}, Environment: ${Constants.executionEnvironment}`);
-        setEnvInfo(`App Ownership: ${Constants.appOwnership || 'unknown'}`);
+        setEnvInfo(`App Ownership: ${Constants.appOwnership || 'unknown'}, Project ID: ${projectId}`);
+        
+        console.log('Checking push token with project ID:', projectId);
         
         if (expoPushToken) {
           setTokenStatus('success');
@@ -229,6 +234,11 @@ export function NotificationTest() {
           {envInfo}
         </Text>
       )}
+      {projectId && (
+        <Text style={styles.projectInfo}>
+          Project ID: {projectId}
+        </Text>
+      )}
       
       <View style={styles.buttonContainer}>
         <Button 
@@ -291,8 +301,14 @@ const styles = StyleSheet.create({
   deviceInfo: {
     fontSize: 12,
     color: '#888',
-    marginBottom: 16,
+    marginBottom: 8,
     fontStyle: 'italic'
+  },
+  projectInfo: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 16,
+    fontWeight: 'bold'
   },
   description: {
     fontSize: 14,
