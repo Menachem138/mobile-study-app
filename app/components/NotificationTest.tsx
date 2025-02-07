@@ -14,10 +14,13 @@ export function NotificationTest() {
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
   const [tokenStatus, setTokenStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [deviceInfo, setDeviceInfo] = useState<string>();
 
   useEffect(() => {
     const checkToken = async () => {
       try {
+        setDeviceInfo(`Platform: ${Platform.OS}, Environment: ${Constants.executionEnvironment}`);
+        
         if (expoPushToken) {
           setTokenStatus('success');
           setError(undefined);
@@ -214,6 +217,12 @@ export function NotificationTest() {
         Token Status: {tokenStatus}
       </Text>
       
+      {deviceInfo && (
+        <Text style={styles.deviceInfo}>
+          {deviceInfo}
+        </Text>
+      )}
+      
       <View style={styles.buttonContainer}>
         <Button 
           title="Cancel All Notifications" 
@@ -271,6 +280,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
+  },
+  deviceInfo: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 16,
+    fontStyle: 'italic'
   },
   description: {
     fontSize: 14,
