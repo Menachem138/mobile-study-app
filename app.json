@@ -3,15 +3,18 @@
     "name": "Study Time Manager",
     "slug": "study-time-manager",
     "version": "1.0.0",
+    "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.studytimemanager.app"
@@ -23,9 +26,6 @@
       },
       "package": "com.studytimemanager.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
       "expo-notifications"
     ],
@@ -33,10 +33,6 @@
       "eas": {
         "projectId": "study-time-manager"
       }
-    },
-    "developmentClient": false,
-    "runtimeVersion": {
-      "policy": "sdkVersion"
     }
   }
 }
