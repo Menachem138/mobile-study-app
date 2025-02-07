@@ -15,11 +15,13 @@ export function NotificationTest() {
   const [isLoading, setIsLoading] = useState(true);
   const [tokenStatus, setTokenStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [deviceInfo, setDeviceInfo] = useState<string>();
+  const [envInfo, setEnvInfo] = useState<string>();
 
   useEffect(() => {
     const checkToken = async () => {
       try {
         setDeviceInfo(`Platform: ${Platform.OS}, Environment: ${Constants.executionEnvironment}`);
+        setEnvInfo(`App Ownership: ${Constants.appOwnership || 'unknown'}`);
         
         if (expoPushToken) {
           setTokenStatus('success');
@@ -220,6 +222,11 @@ export function NotificationTest() {
       {deviceInfo && (
         <Text style={styles.deviceInfo}>
           {deviceInfo}
+        </Text>
+      )}
+      {envInfo && (
+        <Text style={styles.deviceInfo}>
+          {envInfo}
         </Text>
       )}
       
