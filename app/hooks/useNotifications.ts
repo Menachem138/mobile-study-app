@@ -119,9 +119,11 @@ async function registerForPushNotificationsAsync() {
     }
 
     console.log('Permissions granted, getting push token...');
+    console.log('Getting push token with project ID:', process.env.EXPO_PROJECT_ID);
     const response = await Notifications.getExpoPushTokenAsync({
-      projectId: process.env.EXPO_PROJECT_ID
+      projectId: process.env.EXPO_PROJECT_ID || 'study-time-manager'
     });
+    console.log('Push token response:', response);
     token = response.data;
     console.log('Successfully obtained push token:', token);
   } catch (error) {
