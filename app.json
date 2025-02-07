@@ -12,6 +12,11 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "scheme": "study-time-manager",
+    "owner": "menachems",
+    "experiments": {
+      "tsconfigPaths": true
+    },
     "assetBundlePatterns": [
       "**/*"
     ],

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 export interface NotificationSchedule {
   title: string;
@@ -98,21 +99,35 @@ export function useNotifications() {
 
 async function registerForPushNotificationsAsync() {
   let token;
+  try {
+    console.log('Starting push notification registration...');
+    
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('Existing notification permission status:', existingStatus);
+    let finalStatus = existingStatus;
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      console.log('Requesting notification permissions...');
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+      console.log('New permission status:', status);
+    }
 
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
+    if (finalStatus !== 'granted') {
+      console.log('Failed to get push token: permissions not granted');
+      return;
+    }
+
+    console.log('Permissions granted, getting push token...');
+    const response = await Notifications.getExpoPushTokenAsync({
+      projectId: process.env.EXPO_PROJECT_ID
+    });
+    token = response.data;
+    console.log('Successfully obtained push token:', token);
+  } catch (error) {
+    console.error('Error during push notification registration:', error);
+    throw error;
   }
-
-  if (finalStatus !== 'granted') {
-    console.log('Failed to get push token for push notification!');
-    return;
-  }
-
-  token = (await Notifications.getExpoPushTokenAsync()).data;
 
   if (Platform.OS === 'android') {
     Notifications.setNotificationChannelAsync('default', {

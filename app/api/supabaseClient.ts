@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database.types';
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+import Constants from 'expo-constants';
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL as string;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY as string;
 
 // Custom storage for Node.js environment
 const nodeStorage = {
