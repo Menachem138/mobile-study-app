@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Button, Text, StyleSheet } from 'react-native';
+import { View, Button, Text, StyleSheet, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { useNotifications } from '../hooks/useNotifications';
 import { NotificationService } from '../services/NotificationService';
 import { supabase } from '../api/supabaseClient';
@@ -26,7 +27,20 @@ export function NotificationTest() {
         setDeviceInfo(`Platform: ${Platform.OS}, Environment: ${Constants.executionEnvironment}`);
         setEnvInfo(`App Ownership: ${Constants.appOwnership || 'unknown'}, Project ID: ${projectId}`);
         
-        console.log('Checking push token with project ID:', projectId);
+        console.log('Environment check:', {
+          projectId,
+          Platform: Platform.OS,
+          Constants: {
+            expoConfig: Constants.expoConfig,
+            appOwnership: Constants.appOwnership,
+            executionEnvironment: Constants.executionEnvironment,
+            manifest: Constants.manifest
+          },
+          env: {
+            EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+            EXPO_PROJECT_ID: process.env.EXPO_PROJECT_ID
+          }
+        });
         
         if (expoPushToken) {
           setTokenStatus('success');
@@ -35,16 +49,8 @@ export function NotificationTest() {
         } else {
           setTokenStatus('error');
           console.log('No push token available');
+          setError('Push token not available. Please check permissions.');
         }
-        
-        console.log('Environment Status:', { 
-          Platform: Platform.OS,
-          Constants: {
-            appOwnership: Constants.appOwnership,
-            executionEnvironment: Constants.executionEnvironment,
-            manifest: Constants.manifest
-          }
-        });
 
         // Check if we're running in Expo Go
         if (Constants.appOwnership !== 'expo') {
