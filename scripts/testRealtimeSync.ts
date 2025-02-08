@@ -1,16 +1,35 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
+import { Database } from '../app/types/database.types';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Use service role key for testing
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing required environment variables');
+  process.exit(1);
+}
 
-async function testRealtimeSync() {
+const supabase: SupabaseClient<Database> = createClient(supabaseUrl, supabaseKey);
+
+interface TestUser {
+  id: string;
+  email: string;
+  user_metadata?: {
+    name: string;
+  };
+}
+
+async function testRealtimeSync(): Promise<void> {
+  let channel: RealtimeChannel | null = null;
+  let userId: string | null = null;
+
   try {
     // Set up realtime subscription
-    const channel = supabase.channel('db-changes')
+    channel = supabase.channel('db-changes')
       .on(
         'postgres_changes',
         {
@@ -34,7 +53,7 @@ async function testRealtimeSync() {
     const testEmail = `test_${timestamp}@example.com`;
     const testPassword = `temp_${timestamp}_${Math.random().toString(36).slice(2)}`;
     
-    const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser({
+    const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser<TestUser>({
       email: testEmail,
       password: testPassword,
       user_metadata: {
@@ -44,12 +63,15 @@ async function testRealtimeSync() {
     });
 
     if (signUpError) throw signUpError;
+    if (!user) throw new Error('Failed to create test user');
+
+    userId = user.id;
 
     // Test timer_sessions table
     const { data: timerSession, error: timerError } = await supabase
       .from('timer_sessions')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         duration: 1500,
         type: 'study',
         started_at: new Date().toISOString(),
@@ -65,7 +87,7 @@ async function testRealtimeSync() {
     const { data: calendarEvent, error: calendarError } = await supabase
       .from('calendar_events')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         title: 'Test Event',
         description: 'Test event for realtime sync',
         start_time: new Date().toISOString(),
@@ -87,7 +109,7 @@ async function testRealtimeSync() {
     const { data: contentItem, error: contentError } = await supabase
       .from('content_items')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         type: 'note',
         content: 'Test content for realtime sync',
         file_path: null,
@@ -113,7 +135,7 @@ async function testRealtimeSync() {
     const { data: question, error: questionError } = await supabase
       .from('questions')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         content: 'Test question for realtime sync',
         type: 'general',
         is_answered: false,
@@ -129,7 +151,7 @@ async function testRealtimeSync() {
     const { data: studyGoal, error: studyGoalError } = await supabase
       .from('study_goals')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         title: 'Test Study Goal',
         description: 'Test goal for realtime sync',
         deadline: new Date(Date.now() + 86400000).toISOString(),
@@ -157,7 +179,7 @@ async function testRealtimeSync() {
         theme: 'light',
         updated_at: new Date().toISOString()
       })
-      .eq('id', user.id)
+      .eq('id', userId)
       .select()
       .single();
 
@@ -171,7 +193,7 @@ async function testRealtimeSync() {
     const { data: timerSummary, error: summaryError } = await supabase
       .from('timer_daily_summaries')
       .insert([{
-        user_id: user.id,
+        user_id: userId,
         date: new Date().toISOString().split('T')[0],
         total_study_time: 3600,
         total_break_time: 600,
@@ -209,10 +231,10 @@ async function testRealtimeSync() {
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Cleanup test data
-    const tables = [
-      'timer_sessions', 
-      'calendar_events', 
-      'content_items', 
+    const tables: Array<keyof Database['public']['Tables']> = [
+      'timer_sessions',
+      'calendar_events',
+      'content_items',
       'questions',
       'study_goals',
       'timer_daily_summaries',
@@ -224,7 +246,7 @@ async function testRealtimeSync() {
       const { error: deleteError } = await supabase
         .from(table)
         .delete()
-        .eq(table === 'user_profiles' ? 'id' : 'user_id', user.id);
+        .eq(table === 'user_profiles' ? 'id' : 'user_id', userId);
 
       if (deleteError) {
         console.error(`Error cleaning up ${table}:`, deleteError);
@@ -234,18 +256,29 @@ async function testRealtimeSync() {
     }
 
     // Delete test user
-    const { error: deleteUserError } = await supabase.auth.admin.deleteUser(user.id);
-    if (deleteUserError) {
-      console.error('Error deleting test user:', deleteUserError);
-    } else {
-      console.log('Deleted test user');
+    if (userId) {
+      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
+      if (deleteUserError) {
+        console.error('Error deleting test user:', deleteUserError);
+      } else {
+        console.log('Deleted test user');
+      }
     }
 
     // Cleanup channel subscription
-    channel.unsubscribe();
+    if (channel) {
+      channel.unsubscribe();
+    }
     console.log('\nTest completed successfully');
   } catch (error) {
     console.error('Test failed:', error);
+    // Cleanup on error
+    if (userId) {
+      await supabase.auth.admin.deleteUser(userId).catch(console.error);
+    }
+    if (channel) {
+      channel.unsubscribe();
+    }
   }
 }
 
