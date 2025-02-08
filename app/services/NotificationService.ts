@@ -29,7 +29,9 @@ export class NotificationService {
   }
 
   static async scheduleGoalReminder(goal: StudyGoal): Promise<NotificationSchedule> {
-    if (!goal.deadline) return null;
+    if (!goal.deadline) {
+      throw new Error('Goal must have a deadline to schedule a reminder');
+    }
 
     const deadlineDate = new Date(goal.deadline);
     const reminderDate = new Date(deadlineDate);
@@ -135,7 +137,7 @@ export class NotificationService {
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (studySessions?.length > 0) {
+    if (studySessions && studySessions.length > 0) {
       const lastSession = studySessions[0];
       const sessionEnd = new Date(lastSession.ended_at);
       const now = new Date();
@@ -152,7 +154,7 @@ export class NotificationService {
       }
 
       // Check study consistency
-      const sessionDates = studySessions.map(session => new Date(session.created_at).toDateString());
+      const sessionDates = studySessions?.map(session => new Date(session.created_at).toDateString()) || [];
       const uniqueDates = new Set(sessionDates);
       
       // If studying less than 3 different days in the last 10 sessions
@@ -166,48 +168,6 @@ export class NotificationService {
       }
     }
 
-    // Add chatbot prompts based on study patterns
-    try {
-      const { data: studySessions } = await supabase
-        .from('timer_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('type', 'study')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (studySessions?.length > 0) {
-        const lastSession = studySessions[0];
-        const sessionEnd = new Date(lastSession.ended_at);
-        const now = new Date();
-        const hoursSinceLastSession = (now.getTime() - sessionEnd.getTime()) / (1000 * 60 * 60);
-
-        if (hoursSinceLastSession > 24) {
-          notifications.push({
-            title: 'Study Reminder',
-            body: 'It\'s been a while since your last study session. Need help getting back on track?',
-            data: { type: 'chatbot_prompt', lastSessionId: lastSession.id },
-            trigger: { seconds: 1 }
-          });
-        }
-
-        const sessionDates = studySessions.map(session => new Date(session.created_at).toDateString());
-        const uniqueDates = new Set(sessionDates);
-        
-        if (uniqueDates.size < 3) {
-          notifications.push({
-            title: 'Study Habit Check',
-            body: 'Regular study sessions help build better habits. Want to discuss study scheduling?',
-            data: { type: 'chatbot_prompt', action: 'schedule_discussion' },
-            trigger: { seconds: 2 }
-          });
-        }
-      }
-
       return notifications;
-    } catch (error) {
-      console.error('Error scheduling chatbot prompts:', error);
-      return notifications;
-    }
   }
 }

@@ -43,7 +43,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
   const scheduleGoalReminder = async (goal: StudyGoal) => {
     const notification = await NotificationService.scheduleGoalReminder(goal);
-    if (!notification) return null;
     return scheduleNotification(notification);
   };
 
