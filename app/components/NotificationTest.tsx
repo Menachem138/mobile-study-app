@@ -214,7 +214,7 @@ export function NotificationTest() {
     };
 
     setupTestData();
-  }, [scheduleNotification]);
+  }, [scheduleNotification, expoPushToken, cancelAllNotifications]);
 
   return (
     <View style={styles.container}>
