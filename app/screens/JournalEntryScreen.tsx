@@ -259,8 +259,8 @@ export function JournalEntryScreen({ route, navigation }: JournalEntryScreenProp
 
       <MediaPicker
         visible={showMediaPicker}
-        onClose={() => setShowMediaPicker(false)}
-        onSelect={handleAddImage}
+        onMediaSelect={handleAddImage}
+        onError={(error) => console.error('Media picker error:', error)}
       />
     </KeyboardAvoidingView>
   );

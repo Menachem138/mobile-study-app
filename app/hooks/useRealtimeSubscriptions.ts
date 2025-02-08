@@ -56,13 +56,13 @@ export function useRealtimeSubscriptions(callbacks: TableCallbacks = {}) {
             console.error(`Error in ${table} callback:`, error);
           }
         })
-        .on('error', (_: string, error: Error) => {
-          console.error(`Channel ${table} error:`, error);
+        .on('system', { event: 'error' }, (payload: { error: Error }) => {
+          console.error(`Channel ${table} error:`, payload.error);
         })
-        .on('disconnect', (_: string) => {
+        .on('system', { event: 'disconnect' }, (payload: any) => {
           console.warn(`Channel ${table} disconnected`);
         })
-        .on('reconnect', (_: string) => {
+        .on('system', { event: 'reconnect' }, (payload: any) => {
           console.log(`Channel ${table} reconnected`);
         });
 
@@ -73,11 +73,11 @@ export function useRealtimeSubscriptions(callbacks: TableCallbacks = {}) {
     const subscribeWithRetry = async (channel: ReturnType<typeof supabase.channel>, retries = 3) => {
       for (let i = 0; i < retries; i++) {
         try {
-          const { error } = await channel.subscribe();
-          if (!error) return;
-          console.error(`Subscription error (attempt ${i + 1}/${retries}):`, error);
+          await channel.subscribe();
+          return;
         } catch (error) {
           console.error(`Subscription error (attempt ${i + 1}/${retries}):`, error);
+          if (i === retries - 1) throw error;
         }
         if (i < retries - 1) {
           await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));

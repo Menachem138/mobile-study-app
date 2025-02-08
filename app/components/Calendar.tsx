@@ -66,7 +66,7 @@ export function Calendar({ tasks, selectedDate, onDateSelect, viewMode }: Calend
         return (
           <RNCalendar
             current={selectedDate.toISOString()}
-            onDayPress={day => onDateSelect(new Date(day.timestamp))}
+            onDayPress={(day: { timestamp: number; dateString: string }) => onDateSelect(new Date(day.timestamp))}
             markedDates={markedDates}
             markingType={'dot'}
             style={styles.calendar}
@@ -84,7 +84,7 @@ export function Calendar({ tasks, selectedDate, onDateSelect, viewMode }: Calend
         return (
           <CalendarList
             current={selectedDate.toISOString()}
-            onDayPress={day => onDateSelect(new Date(day.timestamp))}
+            onDayPress={(day: { timestamp: number; dateString: string }) => onDateSelect(new Date(day.timestamp))}
             markedDates={markedDates}
             markingType={'dot'}
             pastScrollRange={0}
@@ -110,7 +110,7 @@ export function Calendar({ tasks, selectedDate, onDateSelect, viewMode }: Calend
         return (
           <RNCalendar
             current={selectedDate.toISOString()}
-            onDayPress={day => onDateSelect(new Date(day.timestamp))}
+            onDayPress={(day: { timestamp: number; dateString: string }) => onDateSelect(new Date(day.timestamp))}
             markedDates={markedDates}
             markingType={'dot'}
             style={styles.calendar}

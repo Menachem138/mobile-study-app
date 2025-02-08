@@ -23,7 +23,7 @@ interface ContentViewerProps {
 
 const { width, height } = Dimensions.get('window');
 
-const ContentViewer = ({ item, visible, onClose, onDelete, onUpdate }: ContentViewerProps) => {
+export const ContentViewer = ({ item, visible, onClose, onDelete, onUpdate }: ContentViewerProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');

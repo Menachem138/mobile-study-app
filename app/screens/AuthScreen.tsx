@@ -15,22 +15,14 @@ export function AuthScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const { signIn, signUp } = useSupabase();
+  const { signIn } = useSupabase();
 
   const handleAuth = async () => {
     try {
       setLoading(true);
-      if (isLogin) {
-        await signIn(email, password);
-      } else {
-        await signUp(email, password);
-        Alert.alert(
-          'הרשמה בוצעה בהצלחה',
-          'נשלח אליך מייל אימות. אנא אשר אותו כדי להתחיל להשתמש באפליקציה.'
-        );
-      }
+      await signIn(email, password);
     } catch (error) {
-      Alert.alert('שגיאה', error.message);
+      Alert.alert('שגיאה', error instanceof Error ? error.message : 'אירעה שגיאה');
     } finally {
       setLoading(false);
     }

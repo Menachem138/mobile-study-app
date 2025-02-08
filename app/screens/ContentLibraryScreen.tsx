@@ -14,7 +14,7 @@ import { Video, ResizeMode } from 'expo-av';
 import { MediaPicker } from '../components/MediaPicker';
 import { useSupabase } from '../hooks/useSupabase';
 import { MediaItem, MediaType, Album } from '../types/content';
-import ContentViewer from '../components/ContentViewer';
+import { ContentViewer } from '../components/ContentViewer';
 import { AddContentModal } from '../components/AddContentModal';
 import { CreateAlbumModal } from '../components/CreateAlbumModal';
 import AlbumViewer from '../components/AlbumViewer';

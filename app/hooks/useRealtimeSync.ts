@@ -3,7 +3,7 @@ import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supab
 import { supabase, tables } from '../api/supabaseClient';
 import { Database } from '../types/database.types';
 
-type TableName = keyof Database['public']['Tables'];
+type TableName = keyof typeof tables;
 type SyncError = {
   tableName: TableName;
   operation: 'INSERT' | 'UPDATE' | 'DELETE';
@@ -76,7 +76,7 @@ export function useRealtimeSync(userId: string | undefined) {
     const handleRealtimeChange = async (tableName: TableName, payload: RealtimePostgresChangesPayload<{ [key: string]: any }>) => {
       switch (payload.eventType) {
         case 'INSERT': {
-          const { data, error } = await tables[tableName]()
+          const { data, error } = await tables[tableName.replace(/_/g, '') as keyof typeof tables]()
             .select('*')
             .eq('id', payload.new.id)
             .single();
@@ -88,7 +88,7 @@ export function useRealtimeSync(userId: string | undefined) {
           break;
         }
         case 'UPDATE': {
-          const { data, error } = await tables[tableName]()
+          const { data, error } = await tables[tableName.replace(/_/g, '') as keyof typeof tables]()
             .select('*')
             .eq('id', payload.new.id)
             .single();
@@ -152,8 +152,8 @@ export function useRealtimeSync(userId: string | undefined) {
       let result;
       switch (action) {
         case 'INSERT': {
-          const { data: inserted, error } = await tables[tableName]()
-            .insert(tableName === 'user_profiles' ? data : { ...data, user_id: userId })
+          const { data: inserted, error } = await tables[tableName.replace(/_/g, '') as keyof typeof tables]()
+            .insert({ ...data, user_id: userId })
             .select()
             .single();
           if (error) throw error;
@@ -161,7 +161,7 @@ export function useRealtimeSync(userId: string | undefined) {
           break;
         }
         case 'UPDATE': {
-          const { data: updated, error } = await tables[tableName]()
+          const { data: updated, error } = await tables[tableName.replace(/_/g, '') as keyof typeof tables]()
             .update(data)
             .eq('id', data.id)
             .select()
@@ -171,7 +171,7 @@ export function useRealtimeSync(userId: string | undefined) {
           break;
         }
         case 'DELETE': {
-          const { error } = await tables[tableName]()
+          const { error } = await tables[tableName.replace(/_/g, '') as keyof typeof tables]()
             .delete()
             .eq('id', data.id);
           if (error) throw error;

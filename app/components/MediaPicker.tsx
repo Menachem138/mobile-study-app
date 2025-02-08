@@ -7,6 +7,8 @@ import { MediaType } from '../types/content';
 interface MediaPickerProps {
   onMediaSelect: (url: string, type: MediaType) => void;
   onError?: (error: Error) => void;
+  visible?: boolean;
+  allowedTypes?: string[];
 }
 
 export function MediaPicker({ onMediaSelect, onError }: MediaPickerProps) {

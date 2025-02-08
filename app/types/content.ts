@@ -1,4 +1,4 @@
-export type MediaType = 'image' | 'video' | 'note' | 'link' | 'album';
+export type MediaType = 'image' | 'video' | 'note' | 'link' | 'album' | 'document' | 'tweet' | 'youtube';
 
 export interface MediaItem {
   id: string;

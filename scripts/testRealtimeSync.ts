@@ -53,7 +53,7 @@ async function testRealtimeSync(): Promise<void> {
     const testEmail = `test_${timestamp}@example.com`;
     const testPassword = `temp_${timestamp}_${Math.random().toString(36).slice(2)}`;
     
-    const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser<TestUser>({
+    const { data: { user }, error: signUpError } = await supabase.auth.admin.createUser({
       email: testEmail,
       password: testPassword,
       user_metadata: {

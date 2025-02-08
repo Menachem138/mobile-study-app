@@ -95,7 +95,7 @@ export function ChatbotScreen() {
       if (courses?.length) {
         const courseProgress = courses.map(course => {
           const totalChapters = course.chapters.length;
-          const completedChapters = course.chapters.filter(ch => ch.completed).length;
+          const completedChapters = course.chapters.filter((ch: { completed: boolean }) => ch.completed).length;
           const percentage = Math.round((completedChapters / totalChapters) * 100);
           return `${course.title}: ${percentage}% הושלם`;
         }).join('\n');

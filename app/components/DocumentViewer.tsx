@@ -24,22 +24,24 @@ export function DocumentViewer({ document, visible, onClose, onDelete }: Documen
 
   const renderContent = () => {
     switch (document.type) {
-      case 'pdf':
-        return (
-          <Pdf
-            source={{ uri: document.url || '' }}
-            style={styles.pdfView}
-            enablePaging={true}
-            horizontal={false}
-            onError={(error) => console.error('PDF Error:', error)}
-          />
-        );
-      case 'markdown':
-        return (
-          <View style={styles.markdownContainer}>
-            <Text style={styles.markdownText}>{document.content}</Text>
-          </View>
-        );
+      case 'document':
+        if (document.url?.endsWith('.pdf')) {
+          return (
+            <Pdf
+              source={{ uri: document.url }}
+              style={styles.pdfView}
+              enablePaging={true}
+              horizontal={false}
+              onError={(error) => console.error('PDF Error:', error)}
+            />
+          );
+        } else if (document.content) {
+          return (
+            <View style={styles.markdownContainer}>
+              <Text style={styles.markdownText}>{document.content}</Text>
+            </View>
+          );
+        }
       default:
         return (
           <View style={styles.unsupportedContainer}>

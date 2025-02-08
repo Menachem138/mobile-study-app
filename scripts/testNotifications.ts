@@ -23,6 +23,10 @@ async function testNotifications() {
       email_confirm: true
     });
 
+    if (userError || !user) {
+      throw userError || new Error('Failed to create test user');
+    }
+
     if (userError) throw userError;
 
     // Test calendar event notification

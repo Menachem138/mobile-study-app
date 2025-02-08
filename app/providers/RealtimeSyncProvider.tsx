@@ -47,7 +47,11 @@ export function RealtimeSyncProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <RealtimeSyncContext.Provider value={{ triggerSync, getSyncErrors, clearSyncErrors }}>
+    <RealtimeSyncContext.Provider value={{
+      triggerSync: triggerSync as any,
+      getSyncErrors,
+      clearSyncErrors
+    }}>
       {children}
     </RealtimeSyncContext.Provider>
   );
