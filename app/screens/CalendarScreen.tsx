@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Calendar } from '../components/Calendar';
 import { AddTaskModal } from '../components/AddTaskModal';
 import * as Notifications from 'expo-notifications';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -74,7 +75,8 @@ export function CalendarScreen() {
           data: { taskId },
         },
         trigger: {
-          date: notificationDate,
+          type: SchedulableTriggerInputTypes.DATE,
+          date: notificationDate
         },
       });
     }
