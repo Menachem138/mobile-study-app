@@ -22,7 +22,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.studytimemanager.app"
+      "bundleIdentifier": "com.studytimemanager.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -38,6 +41,14 @@
       "eas": {
         "projectId": "study-time-manager"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/study-time-manager",
+      "enabled": true,
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
